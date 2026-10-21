@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ጅማ ሥራ ፖርታል</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Ethiopic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="grad"><div class="wrap"><nav>
+  <a class="logo" href="./"><i aria-hidden="true">💼</i>ጅማ ሥራ ፖርታል</a>
+  <a class="btn amber" href="#contact">ሥራ ያስተዋውቁ</a>
+</nav></div></header>
+
+<section class="grad hero"><div class="wrap">
+  <h1>Find work in Jimma<br>በጅማ ሥራ ያግኙ</h1>
+  <p>ከጅማ አሠሪዎች የሚወጡ የሥራ ማስታወቂያዎች። በርዕስ፣ በድርጅት ወይም በቦታ ይፈልጉ።</p>
+  <form class="search" role="search" onsubmit="return false"><input id="q" type="search" placeholder="የሥራ ርዕስ፣ ድርጅት ወይም ቦታ ይፈልጉ…" aria-label="ሥራ ይፈልጉ"></form>
+  <div class="pills" id="pills" role="group" aria-label="በዘርፍ ያጣሩ"></div>
+</div></section>
+
+<div class="wrap main">
+  <section aria-label="የሥራ ዝርዝር"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px"><h2>የቅርብ ጊዜ ሥራዎች</h2><span id="count" style="color:var(--mut);font-size:13.5px"></span></div><div id="jobs"><div class="card empty">በመጫን ላይ…</div></div></section>
+  <aside class="side" aria-label="ማስታወቂያና አድራሻ">
+    <div class="card ad ad1"><small>ማስታወቂያ</small><h3>ጅማ ቡና ህብረት ሥራ ማኅበር</h3><p style="margin:0 0 12px;font-size:14px">የቡና ግዢ፣ ጥብስና ወደ ውጭ ሀገር የመላክ አጋሮች ይፈለጋሉ።</p><span class="badge b-vip">ስፖንሰር</span></div>
+    <div class="card ad ad2"><small>ማስታወቂያ</small><h3>የእርስዎ ንግድ እዚህ ይታይ</h3><p style="margin:0 0 12px;font-size:14px">በየሳምንቱ የአካባቢውን ሥራ ፈላጊዎች በባነር ማስታወቂያ ያግኙ።</p><a class="btn ghost sm" href="#contact">ስለ ማስታወቂያ ይጠይቁ</a></div>
+    <div class="card" id="contact" style="padding:18px"><h3>ሠራተኛ ይፈልጋሉ?</h3><p style="color:var(--mut);margin:6px 0 14px;font-size:14px">ክፍት ቦታዎን ይላኩልን፤ አስተዳዳሪያችን ያትምልዎታል።</p>
+      <div style="font-size:14px;display:grid;gap:4px"><a href="tel:0917794343" style="color:inherit">📞 0917794343</a><a href="mailto:winner.as177@gmail.com" style="color:inherit;overflow-wrap:anywhere">✉️ winner.as177@gmail.com</a><span>📍 ጅማ፣ ኦሮሚያ</span></div></div>
+  </aside>
+</div>
+<footer><div class="wrap">© 2026 ጅማ ሥራ ፖርታል። መብቱ በሕግ የተጠበቀ ነው።</div></footer>
+<dialog id="dlg" aria-labelledby="dt"></dialog>
+
+<script type="module">
+import { db, SECTORS, PHONE, EMAIL, esc, fmt, isOpen } from "./firebase-config.js";
+import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const $ = s => document.querySelector(s);
+let jobs = [], sector = "ሁሉም";
+
+function pills(){
+  $("#pills").innerHTML = ["ሁሉም", ...SECTORS].map(s => `<button class="pill" aria-pressed="${s===sector}" data-s="${esc(s)}">${esc(s)}</button>`).join("");
+}
+$("#pills").onclick = e => { const b = e.target.closest(".pill"); if(b){ sector = b.dataset.s; pills(); render(); } };
+
+function render(){
+  const q = $("#q").value.trim().toLowerCase();
+  const list = jobs.filter(isOpen)
+    .filter(j => sector==="ሁሉም" || j.sector===sector)
+    .filter(j => !q || [j.title,j.company,j.location,j.sector].join(" ").toLowerCase().includes(q))
+    .sort((a,b) => (b.vip?1:0) - (a.vip?1:0));
+  $("#count").textContent = list.length + " ክፍት";
+  $("#jobs").innerHTML = list.length ? list.map(j => `<article class="card job"><div class="av" aria-hidden="true">${esc((j.company||"?")[0])}</div><div><h3>${esc(j.title)}</h3><div class="meta"><span>🏢 ${esc(j.company)}</span><span>📍 ${esc(j.location)}</span><span>⏳ ይዘጋል ${fmt(j.deadline)}</span></div><div class="tags">${j.vip?'<span class="badge b-vip">★ ተመራጭ</span>':""}<span class="badge b-type">${esc(j.type)}</span>${j.salary?`<span class="badge b-sal">${esc(j.salary)}</span>`:""}<span class="badge b-open">ክፍት</span></div></div><button class="btn" data-id="${j.id}">ዝርዝር ይመልከቱ</button></article>`).join("")
+    : '<div class="card empty">ከፍለጋዎ ጋር የሚሄድ ክፍት ሥራ የለም። ማጣሪያውን ያጽዱ ወይም ሌላ ቃል ይሞክሩ።</div>';
+}
+
+$("#jobs").onclick = e => {
+  const b = e.target.closest("[data-id]"); if(!b) return;
+  const j = jobs.find(x => x.id === b.dataset.id), d = $("#dlg");
+  d.innerHTML = `<div class="dh"><div><h2 id="dt">${esc(j.title)}</h2><div class="meta"><span>🏢 ${esc(j.company)}</span><span>📍 ${esc(j.location)}</span></div><div class="tags"><span class="badge b-type">${esc(j.type)}</span><span class="badge b-sal">${esc(j.salary||"ደመወዝ አልተጠቀሰም")}</span><span class="badge b-open">ክፍት</span></div></div><button class="x" aria-label="ዝጋ" id="cx">×</button></div>
+  <div class="db"><p style="margin-top:0"><b>የመጨረሻ ቀን፦</b> ${fmt(j.deadline)} · <b>ዘርፍ፦</b> ${esc(j.sector)}</p><div>${esc(j.desc)}</div><div class="note"><b>እንዴት ማመልከት</b><br>በስልክ ${PHONE} ወይም በኢሜል ${EMAIL} ያግኙን፤ የሥራውን ርዕስ “${esc(j.title)}” ይጥቀሱ።</div></div>`;
+  d.showModal(); $("#cx").onclick = () => d.close();
+};
+$("#dlg").addEventListener("click", e => { if(e.target.id==="dlg") e.target.close(); });
+$("#q").addEventListener("input", render);
+
+pills();
+onSnapshot(query(collection(db,"jobs"), orderBy("createdAt","desc")),
+  snap => { jobs = snap.docs.map(d => ({id:d.id, ...d.data()})); render(); },
+  err => { console.error(err); $("#jobs").innerHTML = '<div class="card empty">ሥራዎችን መጫን አልተቻለም። ግንኙነትዎን ያረጋግጡና ገጹን ያድሱ።</div>'; });
+</script>
+</body>
+</html>
