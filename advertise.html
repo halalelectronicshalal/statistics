@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ማስታወቂያ ያስገቡ</title>
+<script>document.documentElement.dataset.theme=localStorage.getItem("theme")||"light"</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Ethiopic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="grad"><div class="wrap"><nav><a class="logo" href="./"><i aria-hidden="true">💼</i><span data-i18n="title"></span></a><a class="l" href="./" data-i18n="back"></a></nav></div></header>
+<main class="wrap">
+<form class="card form simple" id="f" style="display:grid;grid-template-columns:1fr">
+  <h1 style="font-size:24px" data-i18n="advH"></h1>
+  <p style="color:var(--mut);margin:0" data-i18n="advSub"></p>
+  <label><span data-i18n="company"></span><input name="company" required maxlength="100"></label>
+  <label><span data-i18n="adTitle"></span><input name="title" required maxlength="100"></label>
+  <label><span data-i18n="adText"></span><textarea name="text" rows="3" required maxlength="350"></textarea></label>
+  <label><span data-i18n="adLink"></span><input type="url" name="link" required placeholder="https://" maxlength="300"></label>
+  <label><span data-i18n="logo"></span><input type="file" name="logo" accept="image/*"></label>
+  <label><span data-i18n="phone"></span><input type="tel" name="phone" required maxlength="20"></label>
+  <p class="err" id="msg" hidden></p>
+  <button class="btn amber" type="submit" data-i18n="send"></button>
+</form>
+</main>
+<script type="module">
+import { db, safeUrl, fileToLogo } from "./firebase-config.js";
+import { t, applyStatic } from "./i18n.js";
+import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+applyStatic();
+const m = document.getElementById("msg"), say = (k, ok) => { m.style.color = ok ? "var(--em-h)" : "var(--red)"; m.textContent = t(k); m.hidden = false; };
+document.getElementById("f").onsubmit = async e => {
+  e.preventDefault(); m.hidden = true; const form = e.target, f = Object.fromEntries(new FormData(form)), file = form.elements.logo.files[0];
+  if(!safeUrl(f.link)) return say("badLink");
+  let logo = ""; if(file){ try { logo = await fileToLogo(file); } catch { return say("logoErr"); } }
+  try { await addDoc(collection(db,"ads"), { company:f.company, title:f.title, text:f.text, link:f.link, logo, phone:f.phone, status:"pending", createdAt:serverTimestamp() }); form.reset(); say("okMsg", true); }
+  catch(err){ console.error(err); say("failMsg"); }
+};
+</script>
+</body>
+</html>
